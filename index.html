@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meow Meow Breaking Block</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .home-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-screen {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            color: #2962FF;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .cat-name {
+            font-size: 1.8rem;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .story-text {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            max-width: 600px;
+            font-size: 1.1rem;
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            line-height: 1.5;
+        }
+
+        .play-button, .paws-button {
+            background: #2962FF;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        .play-button:hover, .paws-button:hover {
+            background: #1e4ba8;
+            transform: translateY(-2px);
+        }
+
+        .paws-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            font-size: 1rem;
+        }
+
+        .game-canvas-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            max-height: calc(100vh - 120px);
+        }
+
+        #gameCanvas {
+            border: 5px solid #2962FF;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+            background: #f0f8ff;
+        }
+
+        .game-canvas-container.level5 #gameCanvas {
+            background: #000000;
+        }
+
+        .bottom-bar {
+            width: 100%;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -4px 8px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            color: #2962FF;
+        }
+
+        .win-message, .pause-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            font-size: 1.5rem;
+            color: #2962FF;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .restart-btn, .next-level-btn, .resume-btn, .home-btn {
+            background: #2962FF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 5px;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        .restart-btn:hover, .next-level-btn:hover, .resume-btn:hover, .home-btn:hover {
+            background: #1e4ba8;
+        }
+
+        .floating-message {
+            position: fixed;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            z-index: 500;
+            animation: floatUp 2s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        .firework {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="home-screen" id="homeScreen">
+        <h1 class="game-title">🐱 Meow Meow Breaking Block 🐱</h1>
+        
+        <div class="cat-name">Starring: Whiskers the Math Cat 🐾</div>
+        
+        <div class="story-text">
+            Welcome to the most purr-fect block breaking adventure! Help our mathematical cats break through colorful blocks filled with math puzzles. Each level brings new challenges, new cat friends, and exciting adventures!
+            <br><br>
+            Use your mouse to move the paddle, press 'C' to launch your cat, and watch as they solve math problems while breaking blocks! Can you help all the cats complete their missions?
+        </div>
+
+        <button class="play-button" onclick="startGameFromHome()">🎮 Start Playing! 🎮</button>
+    </div>
+
+    <div class="game-screen" id="gameScreen">
+        <button class="paws-button" onclick="togglePause()">⏸️ Paws</button>
+        
+        <div class="game-canvas-container" id="canvasContainer">
+            <canvas id="gameCanvas" width="800" height="500"></canvas>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="stat-item">
+                <div class="stat-label">Level</div>
+                <div class="stat-value" id="levelStat">1</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Total Score</div>
+                <div class="stat-value" id="totalScoreStat">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Last Hit</div>
+                <div class="stat-value" id="lastHitStat">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Best Combo</div>
+                <div class="stat-value" id="bestComboStat">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Blocks Left</div>
+                <div class="stat-value" id="blocksLeftStat">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="win-message" id="winMessage">
+        <div id="winText">🎉 Level Complete! 🎉</div>
+        <div style="font-size: 1rem; margin-top: 10px;" id="winSubtext">Amazing work, Holly!</div>
+        <button class="next-level-btn" onclick="nextLevel()">Next Level</button>
+        <button class="restart-btn" onclick="restartLevel()">Restart Level</button>
+        <button class="home-btn" onclick="goHome()">Home</button>
+    </div>
+
+    <div class="pause-message" id="pauseMessage">
+        <div>⏸️ Game Paused ⏸️</div>
+        <div style="font-size: 1rem; margin-top: 10px;">Take a break, Holly!</div>
+        <button class="resume-btn" onclick="togglePause()">Resume</button>
+        <button class="restart-btn" onclick="restartLevel()">Restart Level</button>
+        <button class="home-btn" onclick="goHome()">Home</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game variables
+        let score = 0;
+        let level = 1;
+        let gameRunning = true;
+        let gamePaused = false;
+        let ballLaunched = false;
+        let comboCount = 0;
+        let bestCombo = 0;
+        let catPoints = 0;
+        let recentPoints = 0;
+        let lastHitPoints = 0;
+        let pointsDisplayTimer = 0;
+        let lastHitTime = 0;
+
+        // Material Design Color Palettes (300-900 range)
+        const levelColors = {
+            1: ['#2196F3', '#1976D2', '#1565C0', '#0D47A1'], // Blue
+            2: ['#9C27B0', '#7B1FA2', '#6A1B9A', '#4A148C'], // Purple
+            3: ['#E91E63', '#C2185B', '#AD1457', '#880E4F'], // Pink
+            4: ['#795548', '#5D4037', '#4E342E', '#3E2723'], // Brown
+            5: ['#FFFFFF', '#F5F5F5', '#EEEEEE', '#E0E0E0'], // White (special case)
+            6: ['#9E9E9E', '#757575', '#616161', '#424242'], // Grey
+            7: ['#424242', '#212121', '#000000', '#000000'], // Black/Dark Grey
+            8: ['#F44336', '#D32F2F', '#C62828', '#B71C1C'], // Red
+            9: ['#FF9800', '#F57C00', '#EF6C00', '#E65100'], // Orange
+            10: ['#FFEB3B', '#FBC02D', '#F9A825', '#F57F17'], // Yellow
+            11: ['#00BCD4', '#0097A7', '#00838F', '#006064'], // Cyan
+            12: ['#2196F3', '#1976D2', '#1565C0', '#0D47A1']  // Cornflower Blue
+        };
+
+        // Cat colors and names for different levels
+        const catColors = ['#ff6b6b', '#ff69b4', '#9b59b6', '#8B4513', '#FFFFFF', '#808080', '#2F2F2F', '#DC143C', '#FF8C00', '#FFD700', '#00CED1', '#6495ED'];
+        const catNames = ['Whiskers', 'Luna', 'Pixel', 'Coco', 'Snowball', 'Shadow', 'Midnight', 'Ruby', 'Sunny', 'Goldie', 'Aqua', 'Sky'];
+
+        // Story texts for levels
+        const storyTexts = [
+            "Whiskers needs to break through the Magic Math Blocks to collect ingredients for the world's most delicious fish cake!",
+            "Luna has found a treasure map hidden in purple blocks! Break them to reveal the secret location!",
+            "Pixel is learning to paint with pink blocks! Help break them to mix the perfect colors!",
+            "Coco is on a treasure hunt through chocolate brown blocks! Find the hidden treats!",
+            "Snowball is playing in a winter wonderland of white blocks! Help her make snow angels!",
+            "Shadow is sneaking through grey blocks to find the secret silver fish!",
+            "Midnight is exploring the dark blocks to find glowing star treats!",
+            "Ruby is collecting red blocks to make the most beautiful ruby necklace!",
+            "Sunny is gathering orange blocks to create the perfect sunset!",
+            "Goldie is mining yellow blocks to find golden treasures!",
+            "Aqua is swimming through cyan blocks to reach the crystal waters!",
+            "Sky is flying through blue blocks to touch the clouds!"
+        ];
+
+        // Encouraging messages
+        const encouragingMessages = [
+            "Great job!", "You're purr-fect!", "Amazing!", "Fantastic!", 
+            "Super smart!", "Meow-nificent!", "Brilliant!", "Awesome math!"
+        ];
+
+        // Ball (Cat) object
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height - 35,
+            dx: 2,
+            dy: -2,
+            radius: 15,
+            color: catColors[0],
+            trail: []
+        };
+
+        // Paddle object
+        const paddle = {
+            x: canvas.width / 2 - 60,
+            y: canvas.height - 20,
+            width: 120,
+            height: 15,
+            color: '#2962FF'
+        };
+
+        // Blocks array
+        let blocks = [];
+        let powerUps = [];
+        let particles = [];
+
+        // Possible point values and math problems
+        const pointValues = [2, 3, 4, 5, 10];
+        const mathProblems = [
+            {problem: "2+1", answer: 3},
+            {problem: "1+1", answer: 2},
+            {problem: "3+2", answer: 5},
+            {problem: "2+2", answer: 4},
+            {problem: "5+5", answer: 10},
+            {problem: "3-1", answer: 2},
+            {problem: "4-1", answer: 3},
+            {problem: "6-2", answer: 4},
+            {problem: "7-2", answer: 5},
+            {problem: "15-5", answer: 10}
+        ];
+
+        // Sound functions (visual feedback)
+        function playMeowSound() {
+            showFloatingMessage("Meow! 🐱", ball.x, ball.y - 30);
+        }
+
+        function playPurrSound() {
+            showFloatingMessage("Purrr! 😸", canvas.width/2, canvas.height/2);
+        }
+
+        function showFloatingMessage(text, x, y) {
+            const message = document.createElement('div');
+            message.className = 'floating-message';
+            message.textContent = text;
+            message.style.left = x + 'px';
+            message.style.top = y + 'px';
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                if (document.body.contains(message)) {
+                    document.body.removeChild(message);
+                }
+            }, 2000);
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    firework.style.left = Math.random() * window.innerWidth + 'px';
+                    firework.style.top = Math.random() * window.innerHeight + 'px';
+                    firework.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                    firework.style.animation = 'floatUp 1s ease-out forwards';
+                    document.body.appendChild(firework);
+                    
+                    setTimeout(() => {
+                        if (document.body.contains(firework)) {
+                            document.body.removeChild(firework);
+                        }
+                    }, 1000);
+                }, i * 100);
+            }
+        }
+
+        function updateCatInfo() {
+            const currentCat = Math.min(level - 1, catNames.length - 1);
+            ball.color = catColors[currentCat];
+            
+            // Special handling for white cat on black background
+            if (level === 5) {
+                document.getElementById('canvasContainer').classList.add('level5');
+                ball.color = '#FFFFFF';
+            } else {
+                document.getElementById('canvasContainer').classList.remove('level5');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('levelStat').textContent = level;
+            document.getElementById('totalScoreStat').textContent = score;
+            document.getElementById('lastHitStat').textContent = lastHitPoints;
+            document.getElementById('bestComboStat').textContent = bestCombo;
+            document.getElementById('blocksLeftStat').textContent = blocks.filter(block => block.visible).length;
+        }
+
+        function createBlocks() {
+            blocks = [];
+            const rows = 4 + Math.floor(level / 2);
+            const cols = 8 + Math.floor(level / 3);
+            const blockWidth = Math.min(70, (canvas.width - 40) / cols);
+            const blockHeight = 25;
+            const padding = 3;
+            const offsetTop = 60;
+            const offsetLeft = (canvas.width - (cols * (blockWidth + padding) - padding)) / 2;
+
+            const colors = levelColors[Math.min(level, 12)] || levelColors[1];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const isGolden = Math.random() < 0.08; // 8% chance for golden block
+                    const isRainbow = Math.random() < 0.12; // 12% chance for rainbow block
+                    const isMath = Math.random() < 0.4; // 40% chance for math block
+                    
+                    let blockData;
+                    if (isMath) {
+                        const mathProblem = mathProblems[Math.floor(Math.random() * mathProblems.length)];
+                        blockData = {
+                            type: 'math',
+                            text: mathProblem.problem,
+                            points: mathProblem.answer
+                        };
+                    } else {
+                        const points = pointValues[Math.floor(Math.random() * pointValues.length)];
+                        blockData = {
+                            type: 'normal',
+                            text: points.toString(),
+                            points: points
+                        };
+                    }
+
+                    let blockColor;
+                    if (isGolden) {
+                        blockColor = '#FFD700';
+                    } else if (isRainbow) {
+                        blockColor = `hsl(${(r+c)*30 % 360}, 70%, 60%)`;
+                    } else {
+                        blockColor = colors[Math.floor(Math.random() * colors.length)];
+                    }
+
+                    blocks.push({
+                        x: offsetLeft + c * (blockWidth + padding),
+                        y: offsetTop + r * (blockHeight + padding),
+                        width: blockWidth,
+                        height: blockHeight,
+                        color: blockColor,
+                        visible: true,
+                        isGolden: isGolden,
+                        isRainbow: isRainbow,
+                        rainbowHue: (r + c) * 30,
+                        ...blockData
+                    });
+                }
+            }
+            updateStats();
+        }
+
+        function drawCatBall() {
+            // Add to trail
+            if (ballLaunched) {
+                ball.trail.push({x: ball.x, y: ball.y});
+                if (ball.trail.length > 15) ball.trail.shift();
+
+                // Draw trail
+                ball.trail.forEach((point, index) => {
+                    const alpha = index / ball.trail.length;
+                    ctx.globalAlpha = alpha * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, ball.radius * alpha, 0, Math.PI * 2);
+                    ctx.fillStyle = ball.color;
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            // Draw cat face
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+
+            // Outline for white cat on black background
+            if (level === 5) {
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // Draw cat ears
+            ctx.beginPath();
+            ctx.moveTo(ball.x - 8, ball.y - 10);
+            ctx.lineTo(ball.x - 3, ball.y - 18);
+            ctx.lineTo(ball.x + 2, ball.y - 10);
+            ctx.fillStyle = level === 5 ? '#FFB6C1' : '#ff4757';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(ball.x + 8, ball.y - 10);
+            ctx.lineTo(ball.x + 3, ball.y - 18);
+            ctx.lineTo(ball.x - 2, ball.y - 10);
+            ctx.fill();
+            ctx.closePath();
+
+            // Draw cat eyes
+            ctx.beginPath();
+            ctx.arc(ball.x - 5, ball.y - 3, 2, 0, Math.PI * 2);
+            ctx.fillStyle = level === 5 ? '#000000' : 'black';
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(ball.x + 5, ball.y - 3, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+
+            // Draw cat nose
+            ctx.beginPath();
+            ctx.moveTo(ball.x, ball.y + 2);
+            ctx.lineTo(ball.x - 2, ball.y - 1);
+            ctx.lineTo(ball.x + 2, ball.y - 1);
+            ctx.fillStyle = level === 5 ? '#FF69B4' : '#ff3838';
+            ctx.fill();
+            ctx.closePath();
+
+            // Draw floating cat points (only recent points from last hit)
+            if (recentPoints > 0 && pointsDisplayTimer > 0) {
+                ctx.fillStyle = '#ff6b6b';
+                ctx.font = 'bold 14px Comic Sans MS';
+                ctx.textAlign = 'center';
+                ctx.fillText(`+${recentPoints}`, ball.x, ball.y - 25);
+                pointsDisplayTimer--;
+                if (pointsDisplayTimer <= 0) {
+                    recentPoints = 0;
+                }
+            }
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.roundRect(paddle.x, paddle.y, paddle.width, paddle.height, 10);
+            ctx.fillStyle = paddle.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBlocks() {
+            blocks.forEach(block => {
+                if (block.visible) {
+                    ctx.beginPath();
+                    ctx.roundRect(block.x, block.y, block.width, block.height, 5);
+                    
+                    if (block.isRainbow) {
+                        block.rainbowHue = (block.rainbowHue + 2) % 360;
+                        ctx.fillStyle = `hsl(${block.rainbowHue}, 70%, 60%)`;
+                    } else {
+                        ctx.fillStyle = block.color;
+                    }
+                    
+                    ctx.fill();
+                    ctx.closePath();
+
+                    // Draw text on block
+                    let textColor = 'white';
+                    if (block.isGolden || block.isRainbow) {
+                        textColor = 'black';
+                    } else if (level === 5) {
+                        textColor = 'black';
+                    }
+                    
+                    ctx.fillStyle = textColor;
+                    ctx.font = `${Math.min(12, block.width/4)}px Comic Sans MS`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(block.text, block.x + block.width/2, block.y + block.height/2 + 4);
+                }
+            });
+        }
+
+        function checkCollisions() {
+            // Only check collisions if ball is launched and game is running
+            if (!ballLaunched || !gameRunning || gamePaused) return;
+
+            // Ball collision with walls
+            if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+                ball.dx = -ball.dx;
+            }
+            if (ball.y - ball.radius < 0) {
+                ball.dy = -ball.dy;
+            }
+
+            // Ball collision with paddle
+            if (ball.y + ball.radius > paddle.y && 
+                ball.x > paddle.x && 
+                ball.x < paddle.x + paddle.width) {
+                ball.dy = -ball.dy;
+                
+                // Add some angle based on where it hits the paddle
+                let hitPos = (ball.x - (paddle.x + paddle.width/2)) / (paddle.width/2);
+                ball.dx = hitPos * 2;
+            }
+
+            // Ball collision with blocks
+            blocks.forEach(block => {
+                if (block.visible && 
+                    ball.x > block.x && 
+                    ball.x < block.x + block.width &&
+                    ball.y > block.y && 
+                    ball.y < block.y + block.height) {
+                    
+                    ball.dy = -ball.dy;
+                    block.visible = false;
+                    
+                    let points = block.points;
+                    if (block.isGolden) points *= 3;
+                    
+                    // Check for combo
+                    const currentTime = Date.now();
+                    if (currentTime - lastHitTime < 1000) { // 1 second for combo
+                        comboCount++;
+                        if (comboCount >= 3) {
+                            points *= 2;
+                            showFloatingMessage("COMBO x2! 🌟", ball.x, ball.y - 40);
+                            bestCombo = Math.max(bestCombo, comboCount);
+                            comboCount = 0; // Reset combo
+                        }
+                    } else {
+                        comboCount = 1;
+                    }
+                    lastHitTime = currentTime;
+                    
+                    score += points;
+                    catPoints += points;
+                    lastHitPoints = points;
+                    
+                    // Show the points from this specific hit
+                    recentPoints = points;
+                    pointsDisplayTimer = 90; // Show for about 1.5 seconds at 60fps
+                    
+                    playMeowSound();
+                    
+                    // Show encouraging message occasionally
+                    if (Math.random() < 0.3) {
+                        const message = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
+                        showFloatingMessage(message, ball.x + 20, ball.y - 20);
+                    }
+                    
+                    updateStats();
+                }
+            });
+
+            // Check if all blocks are destroyed
+            if (blocks.every(block => !block.visible)) {
+                gameRunning = false;
+                playPurrSound();
+                createFireworks();
+                
+                document.getElementById('winText').textContent = `🎉 Level ${level} Complete! 🎉`;
+                document.getElementById('winSubtext').textContent = `Amazing work, Holly! You earned ${catPoints} cat points this level!`;
+                document.getElementById('winMessage').style.display = 'block';
+            }
+
+            // Ball falls below paddle - respawn on paddle
+            if (ball.y > canvas.height) {
+                respawnBall();
+            }
+        }
+
+        function updateBall() {
+            if (ballLaunched && gameRunning && !gamePaused) {
+                ball.x += ball.dx;
+                ball.y += ball.dy;
+            } else if (!ballLaunched) {
+                // Keep ball on paddle when not launched
+                ball.x = paddle.x + paddle.width / 2;
+                ball.y = paddle.y - ball.radius;
+                ball.trail = []; // Clear trail when on paddle
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw game elements
+            drawCatBall();
+            drawPaddle();
+            drawBlocks();
+
+            // Draw pause indicator
+            if (gamePaused) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Comic Sans MS';
+                ctx.textAlign = 'center';
+                ctx.fillText('⏸️ PAUSED', canvas.width/2, canvas.height/2);
+            }
+        }
+
+        function gameLoop() {
+            if (gameRunning) {
+                updateBall();
+                checkCollisions();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function respawnBall() {
+            ballLaunched = false;
+            ball.x = paddle.x + paddle.width / 2;
+            ball.y = paddle.y - ball.radius;
+            ball.dx = 2;
+            ball.dy = -2;
+            ball.trail = [];
+            showFloatingMessage("Press 'C' to launch! 🚀", canvas.width/2, canvas.height/2);
+        }
+
+        function launchBall() {
+            if (!ballLaunched && gameRunning && !gamePaused) {
+                ballLaunched = true;
+                ball.dx = 2 + Math.random() * 2 - 1; // Add slight randomness
+                ball.dy = -2;
+            }
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            if (gamePaused) {
+                document.getElementById('pauseMessage').style.display = 'block';
+            } else {
+                document.getElementById('pauseMessage').style.display = 'none';
+                gameLoop(); // Resume the game loop
+            }
+        }
+
+        function nextLevel() {
+            level++;
+            updateCatInfo();
+            startNewLevel();
+        }
+
+        function restartLevel() {
+            startNewLevel();
+        }
+
+        function startNewLevel() {
+            gameRunning = true;
+            gamePaused = false;
+            ballLaunched = false;
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 35;
+            ball.dx = 2;
+            ball.dy = -2;
+            ball.trail = [];
+            comboCount = 0;
+            catPoints = 0;
+            recentPoints = 0;
+            pointsDisplayTimer = 0;
+            lastHitPoints = 0;
+            createBlocks();
+            updateStats();
+            updateCatInfo();
+            document.getElementById('winMessage').style.display = 'none';
+            document.getElementById('pauseMessage').style.display = 'none';
+            
+            // Show launch instruction
+            setTimeout(() => {
+                if (!ballLaunched && gameRunning) {
+                    const catName = catNames[Math.min(level - 1, catNames.length - 1)];
+                    showFloatingMessage(`Press 'C' to launch ${catName}! 🚀`, canvas.width/2, canvas.height/2);
+                }
+            }, 500);
+            
+            gameLoop();
+        }
+
+        function startGameFromHome() {
+            document.getElementById('homeScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'flex';
+            startNewLevel();
+        }
+
+        function goHome() {
+            document.getElementById('homeScreen').style.display = 'flex';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('winMessage').style.display = 'none';
+            document.getElementById('pauseMessage').style.display = 'none';
+            gameRunning = false;
+            gamePaused = false;
+            // Reset game state
+            level = 1;
+            score = 0;
+            bestCombo = 0;
+        }
+
+        // Mouse movement for paddle
+        canvas.addEventListener('mousemove', (e) => {
+            if (gamePaused) return;
+            const rect = canvas.getBoundingClientRect();
+            paddle.x = e.clientX - rect.left - paddle.width / 2;
+            
+            // Keep paddle within canvas bounds
+            if (paddle.x < 0) paddle.x = 0;
+            if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'c') {
+                launchBall();
+            } else if (e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault();
+                togglePause();
+            }
+        });
+
+        // Initialize game on home screen
+        updateCatInfo();
+    </script>
+</body>
+</html>
